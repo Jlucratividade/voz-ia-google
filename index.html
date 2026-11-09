@@ -948,6 +948,11 @@
   els.language.addEventListener('change', function () {
     state.lang = els.language.value;
     state.voiceName = '';
+    if (isGemini() && !state.voicesByLang[state.lang]) {
+      // No Gemini as mesmas vozes servem para qualquer idioma: reaproveita a lista já carregada.
+      var loaded = Object.keys(state.voicesByLang)[0];
+      if (loaded) state.voicesByLang[state.lang] = state.voicesByLang[loaded];
+    }
     if (state.voicesByLang[state.lang]) {
       state.voicesReady = true; pickDefaultModel(); renderModels(); renderVoices(); applyModelControls();
     } else {

@@ -173,10 +173,11 @@ A página oficial de preços diz que é **preciso ativar o faturamento** para us
 |---|---|---|
 | `GEMINI_API_KEY` | A chave do AI Studio (seção 2b) | Sim, se quiser usar o Gemini |
 | `GOOGLE_TTS_SERVICE_ACCOUNT_JSON` | Todo o conteúdo do arquivo JSON baixado (abra no Bloco de Notas, selecione tudo, copie e cole; do primeiro `{` ao último `}`) | Sim, se quiser usar o Google Cloud |
+| `GOOGLE_TTS_API_KEY` | **Alternativa mais simples** à Service Account: uma chave de API do Google Cloud com a API Text-to-Speech ativada (a mesma que você usaria em um script do Apps Script). Só é usada se `GOOGLE_TTS_SERVICE_ACCOUNT_JSON` não estiver definida. Em Credenciais > Chave de API > **Restringir chave > API Text-to-Speech**, para limitar o estrago caso vaze | Sim, se quiser usar o Google Cloud sem Service Account |
 | `APP_ACCESS_PASSWORD` | Uma senha forte que você inventar | Recomendada |
 | `RATE_LIMIT_PER_MINUTE` | Gerações por minuto por IP no Google Cloud (padrão 10) | Não |
 
-É preciso configurar **pelo menos uma** das duas credenciais.
+É preciso configurar **pelo menos uma** credencial (Gemini, chave de API do Cloud TTS ou Service Account). A chave de API vai ao Google no cabeçalho `x-goog-api-key`, nunca na URL.
 
 5. Clique em **Deploy** e aguarde. A Vercel mostra o endereço, algo como `voz-ia-google.vercel.app`.
 6. **Se você mudar uma variável depois**, é preciso fazer um novo deploy (Deployments > ⋯ > Redeploy) para ela valer.
@@ -212,7 +213,7 @@ A página oficial de preços diz que é **preciso ativar o faturamento** para us
 | "A variável GOOGLE_TTS_SERVICE_ACCOUNT_JSON não está configurada" | Variável ausente ou deploy feito antes de cadastrá-la | Cadastre na Vercel e faça **Redeploy** |
 | "não é um JSON válido" | JSON copiado incompleto | Copie o arquivo inteiro, do primeiro `{` ao último `}` |
 | "O Google recusou as credenciais" | Chave apagada, revogada ou de outro projeto | Gere nova chave e atualize a variável |
-| "Nenhum provedor de voz está configurado" | Nem `GEMINI_API_KEY` nem `GOOGLE_TTS_SERVICE_ACCOUNT_JSON` cadastradas, ou falta o Redeploy | Cadastre ao menos uma e faça **Redeploy** |
+| "Nenhum provedor de voz está configurado" | Nenhuma entre `GEMINI_API_KEY`, `GOOGLE_TTS_API_KEY` e `GOOGLE_TTS_SERVICE_ACCOUNT_JSON` cadastrada, ou falta o Redeploy | Cadastre ao menos uma e faça **Redeploy** |
 | "O Google recusou a chave GEMINI_API_KEY" | Chave inválida, com espaço sobrando, ou apagada | Gere outra em aistudio.google.com/apikey e atualize a variável |
 | "O limite gratuito do Gemini API foi atingido" | Limite por minuto ou por dia do seu projeto (o diário reinicia à meia-noite do horário do Pacífico) | Espere, escolha outro modelo Gemini (cada modelo tem limites próprios) ou use o Google Cloud |
 | "O Gemini respondeu sem áudio" | O modelo devolveu texto em vez de voz | Tente de novo; se persistir, remova a instrução de estilo ou troque o modelo |

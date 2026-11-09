@@ -112,7 +112,7 @@ module.exports = async function handler(req, res) {
       const e = new AppError(
         500,
         'CONFIG_MISSING',
-        'Nenhum provedor de voz está configurado no servidor. Cadastre GEMINI_API_KEY (chave gratuita do AI Studio) ou GOOGLE_TTS_SERVICE_ACCOUNT_JSON na Vercel (Settings > Environment Variables) e faça um novo deploy.'
+        'Nenhum provedor de voz está configurado no servidor. Cadastre GEMINI_API_KEY (chave gratuita do AI Studio), GOOGLE_TTS_API_KEY ou GOOGLE_TTS_SERVICE_ACCOUNT_JSON na Vercel (Settings > Environment Variables) e faça um novo deploy.'
       );
       e.extra = { providers };
       throw e;
@@ -129,7 +129,8 @@ module.exports = async function handler(req, res) {
 
     let languageCode = DEFAULT_LANGUAGE;
     if (typeof req.query.languageCode === 'string' && req.query.languageCode) languageCode = req.query.languageCode;
-    if (!/^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/.test(languageCode)) {
+    // "auto" é um idioma especial do Gemini (o modelo detecta o idioma do texto).
+    if (languageCode !== 'auto' && !/^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/.test(languageCode)) {
       throw new AppError(400, 'INVALID_LANGUAGE', 'Código de idioma inválido. Exemplo: pt-BR.');
     }
 
