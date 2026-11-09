@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="Converta textos em narração MP3 realista com o Google Cloud Text-to-Speech.">
+<title>Voz IA Google</title>
+<style>
+  :root {
+    --bg: #0a0c13;
+    --panel: #121524;
+    --panel-2: #181c2f;
+    --border: #272c45;
+    --text: #e9ebf5;
+    --muted: #98a1bd;
+    --accent: #8b7cff;
+    --accent-2: #2dd4bf;
+    --danger: #ff6b81;
+    --ok: #34d399;
+    --warn: #fbbf24;
+    --radius: 16px;
+    --shadow: 0 10px 40px rgba(0, 0, 0, .35);
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background:
+      radial-gradient(900px 500px at 10% -10%, rgba(139, 124, 255, .18), transparent 60%),
+      radial-gradient(800px 500px at 100% 0%, rgba(45, 212, 191, .12), transparent 55%),
+      var(--bg);
+    color: var(--text);
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    min-height: 100vh;
+  }
+  .wrap { max-width: 1160px; margin: 0 auto; padding: 24px 16px 48px; }
+  .top { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .logo {
+    width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    box-shadow: 0 6px 24px rgba(139, 124, 255, .45);
+    font-size: 22px; color: #0a0c13; font-weight: 800;
+  }
+  h1 { margin: 0; font-size: clamp(22px, 4vw, 28px); letter-spacing: -.02em; }
+  .sub { margin: 2px 0 0; color: var(--muted); font-size: 14px; }
+  .grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+  @media (max-width: 920px) { .grid { grid-template-columns: 1fr; } }
+  .card {
+    background: linear-gradient(180deg, var(--panel), #0f1220);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 20px; box-shadow: var(--shadow);
+  }
+  h2 { margin: 0 0 14px; font-size: 17px; letter-spacing: -.01em; }
+  h3 { margin: 0 0 8px; font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  .block { margin-bottom: 20px; }
+  .block:last-child { margin-bottom: 0; }
+  label.field { display: block; font-size: 14px; color: var(--muted); margin-bottom: 6px; }
+
+  textarea, select, input[type="password"], input[type="text"] {
+    width: 100%; background: var(--panel-2); color: var(--text);
+    border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; font: inherit;
+  }
+  textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
+  textarea:focus, select:focus, input:focus-visible, button:focus-visible, a:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 2px; border-color: transparent;
+  }
+  select { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%); background-position: calc(100% - 20px) 50%, calc(100% - 15px) 50%; background-size: 5px 5px; background-repeat: no-repeat; padding-right: 36px; }
+
+  .counter-row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; margin-top: 8px; font-size: 13px; color: var(--muted); }
+  .counter-row .over { color: var(--danger); font-weight: 600; }
+
+  .cta {
+    width: 100%; margin-top: 16px; padding: 16px 20px; border: 0; border-radius: 14px; cursor: pointer;
+    font: 800 17px/1 inherit; letter-spacing: .04em; color: #0a0c13;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    box-shadow: 0 10px 30px rgba(139, 124, 255, .35);
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    transition: transform .08s ease, filter .15s ease, box-shadow .15s ease;
+  }
+  .cta:hover:not(:disabled) { filter: brightness(1.08); }
+  .cta:active:not(:disabled) { transform: translateY(1px); }
+  .cta:disabled { cursor: not-allowed; filter: grayscale(.6) brightness(.7); box-shadow: none; }
+  .spinner { width: 18px; height: 18px; border-radius: 50%; border: 3px solid rgba(10, 12, 19, .3); border-top-color: #0a0c13; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2s; } }
+
+  .status { margin-top: 14px; padding: 12px 14px; border-radius: 12px; font-size: 14px; border: 1px solid var(--border); background: var(--panel-2); }
+  .status.error { border-color: rgba(255, 107, 129, .5); background: rgba(255, 107, 129, .1); color: #ffc9d1; }
+  .status.success { border-color: rgba(52, 211, 153, .5); background: rgba(52, 211, 153, .1); color: #b7f5da; }
+  .status.info { border-color: rgba(139, 124, 255, .45); background: rgba(139, 124, 255, .1); color: #d6d1ff; }
+  .status .retry { margin-top: 8px; }
+
+  .result { margin-top: 16px; padding: 16px; border: 1px solid var(--border); border-radius: 14px; background: var(--panel-2); }
+  .result audio { width: 100%; }
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 10px 16px; border-radius: 12px; border: 1px solid var(--border); background: #1d2238; color: var(--text);
+    font: 600 14px/1 inherit; cursor: pointer; text-decoration: none;
+  }
+  .btn:hover { border-color: var(--accent); }
+  .btn.primary { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #0a0c13; border: 0; }
+
+  /* Modelos */
+  .models { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 480px) { .models { grid-template-columns: 1fr; } }
+  .model { position: relative; }
+  .model input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+  .model .box {
+    display: block; height: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--border); background: var(--panel-2);
+    transition: border-color .15s, background .15s;
+  }
+  .model input:checked + .box { border-color: var(--accent); background: rgba(139, 124, 255, .12); box-shadow: 0 0 0 1px var(--accent) inset; }
+  .model input:focus-visible + .box { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .model input:disabled + .box { opacity: .45; cursor: not-allowed; }
+  .model .name { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-weight: 700; }
+  .model .tag { font-size: 11px; font-weight: 600; color: var(--accent-2); }
+  .model .meta { display: block; margin-top: 4px; font-size: 12px; color: var(--muted); line-height: 1.45; }
+
+  /* Filtros */
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { position: relative; }
+  .provider-note { margin-top: 8px; }
+  .chip input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+  .chip span {
+    display: inline-block; padding: 7px 12px; border-radius: 999px; font-size: 13px; font-weight: 600;
+    border: 1px solid var(--border); background: var(--panel-2); color: var(--muted);
+  }
+  .chip input:checked + span { background: rgba(45, 212, 191, .15); border-color: var(--accent-2); color: #bff7ee; }
+  .chip input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .help { font-size: 12px; color: var(--muted); margin: 8px 0 0; }
+  .voice-id { font-size: 12px; color: var(--muted); margin-top: 6px; word-break: break-all; }
+
+  /* Sliders */
+  .slider { margin-bottom: 14px; }
+  .slider-head { display: flex; justify-content: space-between; align-items: baseline; font-size: 14px; }
+  .slider-head output { font-variant-numeric: tabular-nums; color: var(--accent-2); font-weight: 700; }
+  input[type="range"] { width: 100%; accent-color: var(--accent); margin: 6px 0 0; }
+  input[type="range"]:disabled { opacity: .35; }
+  .slider .note { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  .estimate { font-size: 13px; color: var(--muted); background: var(--panel-2); border: 1px dashed var(--border); border-radius: 12px; padding: 12px 14px; }
+  .estimate strong { color: var(--text); }
+  footer { margin-top: 28px; text-align: center; color: var(--muted); font-size: 12px; }
+  footer a { color: var(--accent-2); }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">V</div>
+      <div>
+        <h1>Voz IA Google</h1>
+        <p class="sub">Converta texto em narração com o Google Cloud Text-to-Speech ou com o Gemini (AI Studio)</p>
+      </div>
+    </div>
+  </header>
+
+  <noscript><div class="status error">Este aplicativo precisa de JavaScript ativado no navegador.</div></noscript>
+
+  <main class="grid">
+    <!-- COLUNA PRINCIPAL -->
+    <section class="card" aria-labelledby="h-texto">
+      <h2 id="h-texto">Seu texto</h2>
+      <label class="sr-only" for="text">Texto para converter em áudio</label>
+      <textarea id="text" placeholder="Digite ou cole aqui o texto que você quer transformar em áudio…" spellcheck="true" autocomplete="off"></textarea>
+      <div class="counter-row">
+        <span id="counter">0 caracteres</span>
+        <span id="bytes"></span>
+      </div>
+
+      <div id="passwordBox" class="block" style="margin-top:14px" hidden>
+        <label class="field" for="appPassword">Senha de acesso do aplicativo</label>
+        <input id="appPassword" type="password" autocomplete="current-password" placeholder="Digite a senha definida pelo administrador">
+      </div>
+
+      <button id="generate" class="cta" type="button" disabled>
+        <span id="generateIcon" aria-hidden="true"></span>
+        <span id="generateLabel">✨ GERAR ÁUDIO</span>
+      </button>
+
+      <div id="status" class="status" hidden></div>
+
+      <div id="result" class="result" hidden>
+        <audio id="player" controls preload="auto"></audio>
+        <div class="actions">
+          <a id="download" class="btn primary" href="#" download="voz-ia-google.mp3"><span id="downloadLabel">⬇ Baixar MP3</span></a>
+          <button id="another" class="btn" type="button">🔁 Gerar outro áudio</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- COLUNA DE AJUSTES -->
+    <aside class="card" aria-labelledby="h-ajustes">
+      <h2 id="h-ajustes">Voz e ajustes</h2>
+
+      <div class="block" id="providerBlock">
+        <h3 id="h-prov">Provedor de voz</h3>
+        <div id="providers" class="models" role="radiogroup" aria-labelledby="h-prov"></div>
+        <p class="help" id="providerHelp"></p>
+      </div>
+
+      <div class="block">
+        <label class="field" for="language">Idioma</label>
+        <select id="language" disabled><option>Carregando…</option></select>
+      </div>
+
+      <div class="block">
+        <h3 id="h-modelo">Modelo de voz</h3>
+        <div id="models" class="models" role="radiogroup" aria-labelledby="h-modelo"></div>
+        <p class="help" id="modelHelp"></p>
+      </div>
+
+      <div class="block" id="filtersBlock">
+        <h3>Filtros de voz</h3>
+        <div class="chips" role="group" aria-label="Filtrar por gênero">
+          <label class="chip"><input type="radio" name="gender" value="all" checked><span>Todas</span></label>
+          <label class="chip"><input type="radio" name="gender" value="MALE"><span>Masculina</span></label>
+          <label class="chip"><input type="radio" name="gender" value="FEMALE"><span>Feminina</span></label>
+        </div>
+        <div class="chips" style="margin-top:10px" role="group" aria-label="Filtrar por categoria de qualidade">
+          <label class="chip"><input type="checkbox" name="quality" value="natural"><span>Natural</span></label>
+          <label class="chip"><input type="checkbox" name="quality" value="profissional"><span>Profissional</span></label>
+          <label class="chip"><input type="checkbox" name="quality" value="alta"><span>Alta qualidade</span></label>
+        </div>
+        <p class="help">Gênero vem da API do Google. “Natural”, “Profissional” e “Alta qualidade” são agrupamentos deste aplicativo, baseados no modelo da voz (o Google não classifica vozes assim). Natural: WaveNet, Neural2 e Chirp 3 HD. Profissional: Neural2 e WaveNet (aceitam todos os ajustes). Alta qualidade: Neural2 e Chirp 3 HD. Filtros combinados mostram só vozes que atendem a todos.</p>
+      </div>
+
+      <div class="block">
+        <label class="field" for="voice">Voz</label>
+        <select id="voice" disabled><option>Carregando vozes…</option></select>
+        <div id="voiceId" class="voice-id"></div>
+      </div>
+
+      <div class="block" id="geminiControls" hidden>
+        <h3>Estilo da narração</h3>
+        <div class="slider">
+          <label class="field" for="pace">Ritmo</label>
+          <select id="pace">
+            <option value="normal">Normal</option>
+            <option value="slow">Lento</option>
+            <option value="fast">Rápido</option>
+          </select>
+        </div>
+        <div class="slider">
+          <label class="field" for="style">Instrução de estilo (opcional)</label>
+          <input id="style" type="text" maxlength="200" autocomplete="off" placeholder="Ex.: tom calmo e acolhedor, como um narrador de documentário">
+          <div class="note">O Gemini controla tom, emoção e ritmo por instruções em linguagem natural; ele não tem barras de velocidade, tom e volume. Dica: troque a voz para mudar o timbre.</div>
+        </div>
+      </div>
+
+      <div class="block" id="googleControls">
+        <h3>Controles de áudio</h3>
+        <div class="slider">
+          <div class="slider-head"><label for="speed">Velocidade da fala</label><output id="speedOut" for="speed">1,00×</output></div>
+          <input id="speed" type="range" min="0.25" max="4" step="0.05" value="1">
+          <div id="speedNote" class="note"></div>
+        </div>
+        <div class="slider">
+          <div class="slider-head"><label for="pitch">Tom da voz (pitch)</label><output id="pitchOut" for="pitch">0 st</output></div>
+          <input id="pitch" type="range" min="-20" max="20" step="0.5" value="0">
+          <div id="pitchNote" class="note"></div>
+        </div>
+        <div class="slider">
+          <div class="slider-head"><label for="volume">Volume (ganho)</label><output id="volumeOut" for="volume">0 dB</output></div>
+          <input id="volume" type="range" min="-20" max="16" step="1" value="0">
+          <div id="volumeNote" class="note"></div>
+        </div>
+        <button id="resetControls" class="btn" type="button">Restaurar padrões</button>
+      </div>
+
+      <div class="block">
+        <div id="estimate" class="estimate" aria-live="polite"></div>
+      </div>
+    </aside>
+  </main>
+
+  <footer>
+    Áudio gerado pelas APIs oficiais do Google (Cloud Text-to-Speech e Gemini). Suas credenciais ficam somente no servidor.
+    · <a href="https://cloud.google.com/text-to-speech/pricing" target="_blank" rel="noopener noreferrer">Preços Cloud TTS</a> · <a href="https://ai.google.dev/gemini-api/docs/pricing" target="_blank" rel="noopener noreferrer">Preços Gemini</a>
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ---------------- Configuração ---------------- */
+  // Os limites abaixo devem ser iguais aos do servidor (lib/google.js e lib/gemini.js).
+  var GOOGLE_MAX_CHARS = 12000;
+  var GOOGLE_CHUNK_BYTES = 4000;
+  var GEMINI_MAX_CHARS = 10000;     // total por geração no app
+  var GEMINI_CHUNK_CHARS = 900;     // por requisição (o servidor aceita até 1.200)
+  var GEMINI_GAP_SECONDS = 0.2;     // pausa entre as partes
+  var REQUEST_TIMEOUT_MS = 120000;
+
+  // Preços e cotas do Google Cloud TTS: https://cloud.google.com/text-to-speech/pricing (08/11/2026)
+  var MODELS = {
+    standard: { label: 'Standard',   tag: 'Mais barato', freeText: '4 mi caracteres grátis/mês', price: 4,  speedMax: 4, pitch: true,  volume: true  },
+    wavenet:  { label: 'WaveNet',    tag: 'Melhor custo-benefício', freeText: '4 mi caracteres grátis/mês', price: 4,  speedMax: 4, pitch: true,  volume: true  },
+    neural2:  { label: 'Neural2',    tag: 'Alta qualidade', freeText: '1 mi caracteres grátis/mês', price: 16, speedMax: 4, pitch: true,  volume: true  },
+    chirp3hd: { label: 'Chirp 3 HD', tag: 'Mais realista', freeText: '1 mi caracteres grátis/mês', price: 30, speedMax: 2, pitch: false, volume: false }
+  };
+  var MODEL_ORDER = ['standard', 'wavenet', 'neural2', 'chirp3hd'];
+  var DEFAULT_MODEL_PREFERENCE = ['wavenet', 'standard', 'neural2', 'chirp3hd'];
+  var FILTER_SETS = {
+    natural: ['wavenet', 'neural2', 'chirp3hd'],
+    profissional: ['neural2', 'wavenet'],
+    alta: ['neural2', 'chirp3hd']
+  };
+  var GENDER_LABEL = { MALE: 'Masculina', FEMALE: 'Feminina', NEUTRAL: 'Neutra', SSML_VOICE_GENDER_UNSPECIFIED: 'Não informado' };
+
+  /* ---------------- Elementos ---------------- */
+  var $ = function (id) { return document.getElementById(id); };
+  var els = {
+    text: $('text'), counter: $('counter'), bytes: $('bytes'),
+    generate: $('generate'), generateIcon: $('generateIcon'), generateLabel: $('generateLabel'),
+    status: $('status'), result: $('result'), player: $('player'), download: $('download'), downloadLabel: $('downloadLabel'), another: $('another'),
+    providers: $('providers'), providerHelp: $('providerHelp'), modelHelp: $('modelHelp'),
+    language: $('language'), models: $('models'), voice: $('voice'), voiceId: $('voiceId'),
+    filtersBlock: $('filtersBlock'), googleControls: $('googleControls'), geminiControls: $('geminiControls'),
+    pace: $('pace'), style: $('style'),
+    speed: $('speed'), pitch: $('pitch'), volume: $('volume'),
+    speedOut: $('speedOut'), pitchOut: $('pitchOut'), volumeOut: $('volumeOut'),
+    speedNote: $('speedNote'), pitchNote: $('pitchNote'), volumeNote: $('volumeNote'),
+    reset: $('resetControls'), estimate: $('estimate'),
+    passwordBox: $('passwordBox'), password: $('appPassword')
+  };
+
+  var state = {
+    provider: '',
+    providers: [],
+    gModels: [],        // modelos Gemini (vêm do servidor)
+    gModel: '',
+    languages: [],
+    lang: 'pt-BR',
+    voicesByLang: {},
+    model: 'wavenet',   // modelo do Google Cloud
+    gender: 'all',
+    qualities: [],
+    voiceName: '',
+    busy: false,
+    objectUrl: null,
+    voicesReady: false,
+    passwordRequired: false
+  };
+
+  function isGemini() { return state.provider === 'gemini'; }
+  function maxChars() { return isGemini() ? GEMINI_MAX_CHARS : GOOGLE_MAX_CHARS; }
+
+  /* ---------------- Utilidades ---------------- */
+  function fmt(n, digits) {
+    return Number(n).toLocaleString('pt-BR', { minimumFractionDigits: digits || 0, maximumFractionDigits: digits || 0 });
+  }
+  function countChars(s) { return Array.from(s).length; }
+  function countBytes(s) { return new TextEncoder().encode(s).length; }
+  function langLabel(l) {
+    if (l.label) return l.label;
+    try {
+      var name = new Intl.DisplayNames(['pt-BR'], { type: 'language' }).of(l.code);
+      if (name && name !== l.code) return name.charAt(0).toUpperCase() + name.slice(1) + ' (' + l.code + ')';
+    } catch (e) { /* usa o código */ }
+    return l.code;
+  }
+  function shortVoiceName(name) {
+    return name.replace(/^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*?-(?=(?:Standard|Wavenet|Neural2|Chirp3))/, '');
+  }
+  function storageGet(k) { try { return sessionStorage.getItem(k) || ''; } catch (e) { return ''; } }
+  function storageSet(k, v) { try { sessionStorage.setItem(k, v); } catch (e) { /* ignora */ } }
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+  function showStatus(type, message, opts) {
+    els.status.className = 'status ' + type;
+    els.status.setAttribute('role', type === 'error' ? 'alert' : 'status');
+    els.status.textContent = message;
+    if (opts && opts.retry) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'btn retry'; b.textContent = 'Tentar novamente';
+      b.addEventListener('click', opts.retry);
+      els.status.appendChild(document.createElement('br'));
+      els.status.appendChild(b);
+    }
+    els.status.hidden = false;
+  }
+  function hideStatus() { els.status.hidden = true; els.status.textContent = ''; }
+
+  /* ---------------- Chamadas à API ---------------- */
+  function ApiError(code, message, status, providers, retryAfter) {
+    this.code = code; this.message = message; this.status = status; this.providers = providers || null; this.retryAfter = retryAfter || 0;
+  }
+
+  function friendlyHttp(status) {
+    if (status === 413) return 'O texto ou o áudio é grande demais para uma única geração. Divida o texto em partes menores.';
+    if (status === 504 || status === 408) return 'A geração demorou mais que o permitido e foi interrompida. Tente um texto menor.';
+    if (status === 404) return 'Os endereços /api/voices e /api/tts não foram encontrados. Confirme que as pastas api/ e lib/ foram enviadas ao GitHub e que o deploy terminou.';
+    if (status === 429) return 'Muitas requisições em pouco tempo. Aguarde um minuto e tente novamente.';
+    if (status >= 500) return 'Erro no servidor (código ' + status + '). Veja os logs da função na Vercel.';
+    return 'Falha inesperada (código ' + status + ').';
+  }
+
+  async function parseError(res) {
+    var data = null;
+    try { data = await res.json(); } catch (e) { data = null; }
+    var retry = Number(res.headers.get('Retry-After')) || 0;
+    if (data && data.error && data.error.message) return new ApiError(data.error.code, data.error.message, res.status, data.providers, retry);
+    return new ApiError('HTTP_' + res.status, friendlyHttp(res.status), res.status, null, retry);
+  }
+
+  function networkError(e) {
+    if (e && e.name === 'AbortError') return new ApiError('TIMEOUT', 'A geração demorou demais e foi cancelada. Tente um texto menor.', 0);
+    return new ApiError('NETWORK', 'Não foi possível falar com o servidor. Verifique sua conexão com a internet e tente novamente.', 0);
+  }
+
+  async function fetchVoices(lang) {
+    var url = '/api/voices?languageCode=' + encodeURIComponent(lang) + (state.provider ? '&provider=' + encodeURIComponent(state.provider) : '');
+    var res;
+    try { res = await fetch(url); }
+    catch (e) { throw networkError(e); }
+    if (!res.ok) throw await parseError(res);
+    return res.json();
+  }
+
+  /* ---------------- Provedores ---------------- */
+  function renderProviders() {
+    els.providers.innerHTML = '';
+    state.providers.forEach(function (p) {
+      var wrap = document.createElement('label'); wrap.className = 'model';
+      var input = document.createElement('input');
+      input.type = 'radio'; input.name = 'provider'; input.value = p.id;
+      input.checked = (state.provider === p.id); input.disabled = !p.available;
+      var box = document.createElement('span'); box.className = 'box';
+      var name = document.createElement('span'); name.className = 'name';
+      var nm = document.createElement('span'); nm.textContent = p.label;
+      name.appendChild(nm);
+      var meta = document.createElement('span'); meta.className = 'meta';
+      meta.textContent = p.available ? p.hint : 'Não configurado no servidor. ' + p.missing + ' na Vercel.';
+      box.appendChild(name); box.appendChild(meta);
+      wrap.appendChild(input); wrap.appendChild(box);
+      input.addEventListener('change', function () { switchProvider(p.id); });
+      els.providers.appendChild(wrap);
+    });
+    var avail = state.providers.filter(function (p) { return p.available; }).length;
+    els.providerHelp.textContent = avail > 1
+      ? 'Google Cloud: MP3, vários modelos e preços, exige faturamento. Gemini: WAV, vozes expressivas, faixa gratuita com a chave do AI Studio.'
+      : '';
+    $('providerBlock').hidden = state.providers.length === 0;
+  }
+
+  function switchProvider(id) {
+    if (state.busy || id === state.provider) return;
+    state.provider = id;
+    state.languages = []; state.voicesByLang = {}; state.voiceName = ''; state.lang = 'pt-BR';
+    hideStatus(); hideResult();
+    applyProviderUI();
+    loadVoices('pt-BR', true);
+  }
+
+  function applyProviderUI() {
+    var g = isGemini();
+    els.filtersBlock.hidden = g;
+    els.googleControls.hidden = g;
+    els.geminiControls.hidden = !g;
+    els.downloadLabel.textContent = g ? '⬇ Baixar WAV' : '⬇ Baixar MP3';
+    els.modelHelp.textContent = g
+      ? 'Informações de gratuidade vindas das páginas do Google (a página oficial de preços lista os modelos 3.1 e 2.5 como gratuitos; os 3.8 constam como gratuitos em fontes de terceiros). No plano gratuito o Google pode usar seus textos para melhorar seus produtos.'
+      : 'Os preços e cotas abaixo vêm da página oficial de preços do Google (conferidos em 08/11/2026) e podem mudar. Padrão: WaveNet, pelo melhor equilíbrio entre qualidade e custo.';
+    updateCounter();
+  }
+
+  /* ---------------- Vozes, idiomas e modelos ---------------- */
+  async function loadVoices(lang, isFirst) {
+    state.voicesReady = false;
+    els.voice.disabled = true;
+    els.voice.innerHTML = '';
+    var opt = document.createElement('option'); opt.textContent = 'Carregando vozes…'; els.voice.appendChild(opt);
+    updateGenerateButton();
+
+    try {
+      var data = await fetchVoices(lang);
+      var providerChanged = state.provider !== data.provider;
+      state.provider = data.provider;
+      state.providers = data.providers || state.providers;
+      state.passwordRequired = !!data.passwordRequired;
+      els.passwordBox.hidden = !state.passwordRequired;
+      if (data.geminiModels) {
+        state.gModels = data.geminiModels;
+        if (!state.gModels.some(function (m) { return m.id === state.gModel; })) state.gModel = state.gModels[0] ? state.gModels[0].id : '';
+      }
+      renderProviders();
+      if (providerChanged) applyProviderUI();
+
+      if (isFirst || !state.languages.length) {
+        state.languages = data.languages || [];
+        renderLanguages();
+        var def = data.defaultLanguage || 'pt-BR';
+        var hasDefault = state.languages.some(function (l) { return l.code === def; });
+        state.lang = hasDefault ? def : (state.languages[0] ? state.languages[0].code : lang);
+        els.language.value = state.lang;
+        if (state.lang !== lang) { return loadVoices(state.lang, false); }
+      }
+      state.voicesByLang[lang] = data.voices || [];
+      state.voicesReady = true;
+      pickDefaultModel();
+      renderModels();
+      renderVoices();
+      applyModelControls();
+      hideStatus();
+    } catch (e) {
+      if (e instanceof ApiError && e.providers) { state.providers = e.providers; renderProviders(); }
+      var msg = e instanceof ApiError ? e.message : 'Erro inesperado ao carregar as vozes.';
+      showStatus('error', 'Não foi possível carregar a lista de vozes. ' + msg, { retry: function () { loadVoices(lang, isFirst); } });
+      els.voice.innerHTML = '';
+      var o2 = document.createElement('option'); o2.textContent = 'Vozes indisponíveis'; els.voice.appendChild(o2);
+    }
+    updateGenerateButton();
+  }
+
+  function renderLanguages() {
+    els.language.innerHTML = '';
+    state.languages.forEach(function (l) {
+      var o = document.createElement('option');
+      o.value = l.code;
+      o.textContent = langLabel(l) + ' · ' + l.total + (l.total === 1 ? ' voz' : ' vozes');
+      els.language.appendChild(o);
+    });
+    els.language.disabled = false;
+  }
+
+  function currentLanguageInfo() {
+    for (var i = 0; i < state.languages.length; i++) if (state.languages[i].code === state.lang) return state.languages[i];
+    return null;
+  }
+
+  function pickDefaultModel() {
+    if (isGemini()) return;
+    var info = currentLanguageInfo();
+    var counts = info ? info.models : {};
+    if (counts[state.model] > 0) return;
+    for (var i = 0; i < DEFAULT_MODEL_PREFERENCE.length; i++) {
+      if (counts[DEFAULT_MODEL_PREFERENCE[i]] > 0) { state.model = DEFAULT_MODEL_PREFERENCE[i]; return; }
+    }
+  }
+
+  function modelCard(key, title, tag, metaText, checked, disabled, onChange) {
+    var wrap = document.createElement('label'); wrap.className = 'model';
+    var input = document.createElement('input');
+    input.type = 'radio'; input.name = 'model'; input.value = key;
+    input.checked = checked; input.disabled = disabled;
+    var box = document.createElement('span'); box.className = 'box';
+    var name = document.createElement('span'); name.className = 'name';
+    var nm = document.createElement('span'); nm.textContent = title;
+    var tg = document.createElement('span'); tg.className = 'tag'; tg.textContent = tag;
+    name.appendChild(nm); name.appendChild(tg);
+    var meta = document.createElement('span'); meta.className = 'meta'; meta.textContent = metaText;
+    box.appendChild(name); box.appendChild(meta);
+    wrap.appendChild(input); wrap.appendChild(box);
+    input.addEventListener('change', onChange);
+    return wrap;
+  }
+
+  function renderModels() {
+    els.models.innerHTML = '';
+    if (isGemini()) {
+      state.gModels.forEach(function (m) {
+        els.models.appendChild(modelCard(m.id, m.label, m.tag, m.detail, state.gModel === m.id, false, function () {
+          state.gModel = m.id; updateEstimate();
+        }));
+      });
+      return;
+    }
+    var info = currentLanguageInfo();
+    var counts = info ? info.models : {};
+    MODEL_ORDER.forEach(function (key) {
+      var m = MODELS[key];
+      var n = counts[key] || 0;
+      var metaText = n === 0
+        ? 'Sem vozes neste idioma'
+        : n + (n === 1 ? ' voz' : ' vozes') + ' · US$ ' + m.price + '/1 mi caract. · ' + m.freeText;
+      els.models.appendChild(modelCard(key, m.label, m.tag, metaText, state.model === key, n === 0, function () {
+        state.model = key; renderVoices(); applyModelControls(); updateEstimate();
+      }));
+    });
+  }
+
+  function visibleVoices() {
+    var list = state.voicesByLang[state.lang] || [];
+    if (isGemini()) return list;
+    return list.filter(function (v) {
+      if (v.model !== state.model) return false;
+      if (state.gender !== 'all' && v.gender !== state.gender) return false;
+      for (var i = 0; i < state.qualities.length; i++) {
+        if (FILTER_SETS[state.qualities[i]].indexOf(v.model) === -1) return false;
+      }
+      return true;
+    });
+  }
+
+  function renderVoices() {
+    var list = visibleVoices();
+    var previous = state.voiceName;
+    els.voice.innerHTML = '';
+    if (!list.length) {
+      var o = document.createElement('option');
+      o.textContent = 'Nenhuma voz com estes filtros';
+      els.voice.appendChild(o);
+      els.voice.disabled = true;
+      state.voiceName = '';
+      els.voiceId.textContent = state.qualities.length
+        ? 'Os filtros ativos não incluem o modelo ' + MODELS[state.model].label + '. Escolha outro modelo ou limpe os filtros.'
+        : 'Nenhuma voz deste modelo corresponde ao filtro de gênero.';
+      updateGenerateButton();
+      return;
+    }
+    list.forEach(function (v) {
+      var o = document.createElement('option');
+      o.value = v.name;
+      o.textContent = isGemini() ? v.name : shortVoiceName(v.name) + ' — ' + (GENDER_LABEL[v.gender] || v.gender);
+      els.voice.appendChild(o);
+    });
+    els.voice.disabled = false;
+    var keep = list.some(function (v) { return v.name === previous; });
+    state.voiceName = keep ? previous : list[0].name;
+    els.voice.value = state.voiceName;
+    showVoiceId();
+    updateGenerateButton();
+  }
+
+  function showVoiceId() {
+    if (isGemini()) { els.voiceId.textContent = 'Voz pré-definida do Gemini (a documentação não informa o gênero das vozes).'; return; }
+    var list = state.voicesByLang[state.lang] || [];
+    var v = list.filter(function (x) { return x.name === state.voiceName; })[0];
+    els.voiceId.textContent = v
+      ? 'ID: ' + v.name + (v.sampleRateHertz ? ' · ' + fmt(v.sampleRateHertz) + ' Hz' : '')
+      : '';
+  }
+
+  /* ---------------- Controles de áudio (Google Cloud) ---------------- */
+  function updateOutputs() {
+    els.speedOut.textContent = fmt(els.speed.value, 2) + '×';
+    els.pitchOut.textContent = (Number(els.pitch.value) > 0 ? '+' : '') + fmt(els.pitch.value, 1) + ' st';
+    els.volumeOut.textContent = (Number(els.volume.value) > 0 ? '+' : '') + fmt(els.volume.value) + ' dB';
+  }
+
+  function applyModelControls() {
+    var m = MODELS[state.model];
+    els.speed.max = String(m.speedMax);
+    if (Number(els.speed.value) > m.speedMax) els.speed.value = String(m.speedMax);
+    els.speedNote.textContent = state.model === 'chirp3hd'
+      ? 'No Chirp 3 HD a velocidade vai de 0,25× a 2× (recurso em Preview, segundo o Google).'
+      : 'De 0,25× a 4× (1× é a velocidade normal).';
+
+    els.pitch.disabled = !m.pitch;
+    els.volume.disabled = !m.volume;
+    if (!m.pitch) els.pitch.value = '0';
+    if (!m.volume) els.volume.value = '0';
+    els.pitchNote.textContent = m.pitch ? 'De −20 a +20 semitonos (0 é o tom original).' : 'O Chirp 3 HD não oferece ajuste de tom (documentação do Google).';
+    els.volumeNote.textContent = m.volume ? 'Ganho de −20 a +16 dB nesta barra (o Google aceita até −96 dB).' : 'O Chirp 3 HD não oferece ajuste de volume (documentação do Google).';
+    updateOutputs();
+  }
+
+  function resetControls() {
+    els.speed.value = '1'; els.pitch.value = '0'; els.volume.value = '0';
+    updateOutputs();
+  }
+
+  /* ---------------- Divisão de texto (Gemini) ---------------- */
+  function splitForGemini(text, max) {
+    var units = [];
+    text.replace(/\r\n?/g, '\n').split(/\n{2,}/).forEach(function (p) {
+      p = p.trim();
+      if (!p) return;
+      var pieces = [];
+      if (p.length <= max) {
+        pieces.push(p);
+      } else {
+        (p.match(/[^.!?…]+(?:[.!?…]+["'”’)\]]*|$)\s*/g) || [p]).forEach(function (s) {
+          s = s.trim();
+          if (!s) return;
+          if (s.length <= max) { pieces.push(s); return; }
+          var cur = '';
+          s.split(/\s+/).forEach(function (w) {
+            while (w.length > max) {
+              if (cur) { pieces.push(cur); cur = ''; }
+              pieces.push(w.slice(0, max)); w = w.slice(max);
+            }
+            var cand = cur ? cur + ' ' + w : w;
+            if (cand.length > max) { pieces.push(cur); cur = w; } else { cur = cand; }
+          });
+          if (cur) pieces.push(cur);
+        });
+      }
+      pieces.forEach(function (t, i) { units.push({ t: t, sep: i === 0 ? '\n\n' : ' ' }); });
+    });
+    var chunks = [], cur2 = '';
+    units.forEach(function (u) {
+      if (!cur2) { cur2 = u.t; return; }
+      var cand = cur2 + u.sep + u.t;
+      if (cand.length <= max) { cur2 = cand; } else { chunks.push(cur2); cur2 = u.t; }
+    });
+    if (cur2) chunks.push(cur2);
+    return chunks;
+  }
+
+  /* ---------------- WAV ---------------- */
+  function buildWav(pcmParts, sampleRate) {
+    var gapBytes = Math.round(sampleRate * GEMINI_GAP_SECONDS) * 2;
+    var total = 0;
+    pcmParts.forEach(function (p, i) { total += p.length + (i < pcmParts.length - 1 ? gapBytes : 0); });
+    var buf = new ArrayBuffer(44 + total);
+    var v = new DataView(buf);
+    function str(off, s) { for (var i = 0; i < s.length; i++) v.setUint8(off + i, s.charCodeAt(i)); }
+    str(0, 'RIFF'); v.setUint32(4, 36 + total, true); str(8, 'WAVE'); str(12, 'fmt ');
+    v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+    v.setUint32(24, sampleRate, true); v.setUint32(28, sampleRate * 2, true);
+    v.setUint16(32, 2, true); v.setUint16(34, 16, true); str(36, 'data'); v.setUint32(40, total, true);
+    var out = new Uint8Array(buf), off = 44;
+    pcmParts.forEach(function (p, i) {
+      out.set(p, off); off += p.length;
+      if (i < pcmParts.length - 1) off += gapBytes; // já é zero (silêncio)
+    });
+    return new Blob([buf], { type: 'audio/wav' });
+  }
+
+  /* ---------------- Contador, estimativa e botão ---------------- */
+  function updateCounter() {
+    var text = els.text.value;
+    var chars = countChars(text);
+    var bytes = countBytes(text);
+    var max = maxChars();
+    var over = chars > max;
+    els.counter.textContent = fmt(chars) + ' / ' + fmt(max) + ' caracteres';
+    els.counter.className = over ? 'over' : '';
+    if (chars === 0) {
+      els.bytes.textContent = '';
+    } else if (isGemini()) {
+      var parts = splitForGemini(text, GEMINI_CHUNK_CHARS).length;
+      els.bytes.textContent = 'será dividido em ' + parts + (parts === 1 ? ' parte' : ' partes') + ' (até ' + GEMINI_CHUNK_CHARS + ' caracteres cada)';
+    } else {
+      var n = Math.max(1, Math.ceil(bytes / GOOGLE_CHUNK_BYTES));
+      els.bytes.textContent = fmt(bytes) + ' bytes · ' + (n > 1 ? 'será dividido em ~' + n + ' requisições ao Google' : 'cabe em 1 requisição ao Google (limite de 5.000 bytes)');
+    }
+    updateEstimate();
+    updateGenerateButton();
+  }
+
+  function updateEstimate() {
+    var chars = countChars(els.text.value);
+    els.estimate.innerHTML = '';
+    var line1 = document.createElement('div');
+    var line2 = document.createElement('div');
+    if (isGemini()) {
+      var parts = chars ? splitForGemini(els.text.value, GEMINI_CHUNK_CHARS).length : 0;
+      var s1 = document.createElement('strong'); s1.textContent = parts + (parts === 1 ? ' requisição' : ' requisições');
+      line1.appendChild(s1);
+      line1.appendChild(document.createTextNode(' ao Gemini para este texto.'));
+      line2.textContent = 'Na faixa gratuita não há custo, mas existem limites por minuto e por dia no seu projeto (veja em aistudio.google.com/rate-limit). Textos longos gastam várias requisições. Fora da faixa gratuita, a cobrança é por tokens de áudio (cerca de 25 por segundo de áudio).';
+    } else {
+      var m = MODELS[state.model];
+      var cost = chars * m.price / 1e6;
+      var s = document.createElement('strong'); s.textContent = fmt(chars) + ' caracteres';
+      line1.appendChild(s);
+      line1.appendChild(document.createTextNode(' serão cobrados no modelo ' + m.label + '.'));
+      line2.textContent = 'Fora da cota gratuita: ≈ US$ ' + cost.toLocaleString('pt-BR', { minimumFractionDigits: 4, maximumFractionDigits: 4 }) + '. A cota gratuita (' + m.freeText + ') é mensal por projeto do Google Cloud e não é rastreada por este app.';
+    }
+    els.estimate.appendChild(line1); els.estimate.appendChild(line2);
+  }
+
+  function validateLocal() {
+    var text = els.text.value;
+    if (!text.trim()) return 'Digite ou cole um texto antes de gerar o áudio.';
+    if (countChars(text) > maxChars()) return 'O texto passou do limite de ' + fmt(maxChars()) + ' caracteres. Divida-o em partes menores.';
+    if (!state.voiceName) return 'Selecione uma voz. Se a lista estiver vazia, ajuste o modelo ou os filtros.';
+    if (isGemini() && !state.gModel) return 'Selecione um modelo do Gemini.';
+    return '';
+  }
+
+  function updateGenerateButton() {
+    var invalid = !els.text.value.trim() || countChars(els.text.value) > maxChars() || !state.voiceName || !state.voicesReady;
+    els.generate.disabled = state.busy || invalid;
+  }
+
+  function setBusy(b) {
+    state.busy = b;
+    els.generate.setAttribute('aria-busy', b ? 'true' : 'false');
+    els.generateIcon.innerHTML = '';
+    if (b) { var sp = document.createElement('span'); sp.className = 'spinner'; els.generateIcon.appendChild(sp); }
+    els.generateLabel.textContent = b ? 'GERANDO ÁUDIO…' : '✨ GERAR ÁUDIO';
+    Array.prototype.forEach.call(document.querySelectorAll('input[name="provider"]'), function (r) {
+      var p = state.providers.filter(function (x) { return x.id === r.value; })[0];
+      r.disabled = b || !(p && p.available);
+    });
+    updateGenerateButton();
+  }
+
+  /* ---------------- Geração ---------------- */
+  function hideResult() {
+    els.result.hidden = true;
+    els.player.pause();
+    els.player.removeAttribute('src');
+    els.player.load();
+    if (state.objectUrl) { URL.revokeObjectURL(state.objectUrl); state.objectUrl = null; }
+  }
+
+  function authHeaders() {
+    var headers = { 'Content-Type': 'application/json' };
+    var pw = els.password.value || storageGet('vozia_pw');
+    if (state.passwordRequired && pw) headers['x-app-password'] = pw;
+    return headers;
+  }
+
+  /** Envia um pedido a /api/tts e devolve a Response de áudio (lança ApiError em caso de erro). */
+  async function postTts(payload) {
+    var controller = new AbortController();
+    var timer = setTimeout(function () { controller.abort(); }, REQUEST_TIMEOUT_MS);
+    try {
+      var res;
+      try {
+        res = await fetch('/api/tts', { method: 'POST', headers: authHeaders(), body: JSON.stringify(payload), signal: controller.signal });
+      } catch (e) { throw networkError(e); }
+      var type = res.headers.get('content-type') || '';
+      if (!res.ok || type.indexOf('audio') === -1) throw await parseError(res);
+      return res;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  function finishResult(blob, ext, msg) {
+    state.objectUrl = URL.createObjectURL(blob);
+    els.player.src = state.objectUrl;
+    var stamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14);
+    els.download.href = state.objectUrl;
+    els.download.download = 'voz-ia-google-' + stamp + '.' + ext;
+    els.result.hidden = false;
+    showStatus('success', msg);
+    els.player.focus();
+  }
+
+  async function generateGoogle() {
+    var m = MODELS[state.model];
+    // Os nomes dos campos abaixo devem ser iguais aos lidos em api/tts.js (validate)
+    var payload = {
+      provider: 'google',
+      text: els.text.value,
+      languageCode: state.lang,
+      voiceName: state.voiceName,
+      speakingRate: Number(els.speed.value)
+    };
+    if (m.pitch) payload.pitch = Number(els.pitch.value);
+    if (m.volume) payload.volumeGainDb = Number(els.volume.value);
+
+    var res = await postTts(payload);
+    var blob = await res.blob();
+    var chars = res.headers.get('X-Characters');
+    var chunks = res.headers.get('X-Chunks');
+    var msg = 'Áudio gerado com sucesso!';
+    if (chars) msg += ' ' + fmt(chars) + ' caracteres processados' + (chunks && Number(chunks) > 1 ? ' em ' + chunks + ' partes' : '') + '.';
+    finishResult(blob, 'mp3', msg);
+  }
+
+  async function generateGemini() {
+    var chunks = splitForGemini(els.text.value, GEMINI_CHUNK_CHARS);
+    var pcmParts = [];
+    var rate = 24000;
+
+    for (var i = 0; i < chunks.length; i++) {
+      showStatus('info', 'Gerando a parte ' + (i + 1) + ' de ' + chunks.length + '… não feche a página.');
+      // Os nomes dos campos abaixo devem ser iguais aos lidos em api/tts.js (handleGemini)
+      var payload = {
+        provider: 'gemini',
+        text: chunks[i],
+        languageCode: state.lang,
+        voiceName: state.voiceName,
+        model: state.gModel,
+        pace: els.pace.value,
+        style: els.style.value
+      };
+      var res = null;
+      for (var attempt = 0; attempt < 2; attempt++) {
+        try { res = await postTts(payload); break; }
+        catch (e) {
+          var limited = e instanceof ApiError && (e.code === 'GEMINI_QUOTA' || e.code === 'RATE_LIMITED');
+          if (limited && attempt === 0) {
+            var wait = Math.min(Math.max(e.retryAfter || 30, 5), 60);
+            for (var s = wait; s > 0; s--) {
+              showStatus('info', 'Limite do Gemini atingido na parte ' + (i + 1) + ' de ' + chunks.length + '. Nova tentativa em ' + s + ' s…');
+              await sleep(1000);
+            }
+            continue;
+          }
+          if (e instanceof ApiError && chunks.length > 1) {
+            e = new ApiError(e.code, 'Falha na parte ' + (i + 1) + ' de ' + chunks.length + ' (' + (i) + ' parte(s) já geradas, mas o arquivo só é montado ao final). ' + e.message, e.status);
+          }
+          throw e;
+        }
+      }
+      var bytes = new Uint8Array(await res.arrayBuffer());
+      if (bytes.length < 44) throw new ApiError('EMPTY_AUDIO', 'O servidor devolveu um áudio vazio. Tente novamente.', 0);
+      rate = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength).getUint32(24, true) || 24000;
+      pcmParts.push(bytes.subarray(44));
+    }
+
+    var blob = buildWav(pcmParts, rate);
+    var msg = 'Áudio gerado com sucesso! ' + fmt(countChars(els.text.value)) + ' caracteres' + (chunks.length > 1 ? ' em ' + chunks.length + ' partes unidas em um só arquivo' : '') + '. Formato WAV.';
+    finishResult(blob, 'wav', msg);
+  }
+
+  async function generate() {
+    if (state.busy) return;
+    var problem = validateLocal();
+    if (problem) { showStatus('error', problem); return; }
+
+    setBusy(true);
+    hideResult();
+    showStatus('info', isGemini() ? 'Gerando o áudio…' : 'Gerando o áudio… textos longos são divididos em partes e podem levar alguns segundos. Não feche a página.');
+
+    try {
+      if (isGemini()) await generateGemini(); else await generateGoogle();
+      if (state.passwordRequired && els.password.value) storageSet('vozia_pw', els.password.value);
+    } catch (e) {
+      var text = e instanceof ApiError ? e.message : 'Erro inesperado: ' + (e && e.message ? e.message : e);
+      if (e instanceof ApiError && (e.code === 'APP_PASSWORD_REQUIRED' || e.code === 'APP_PASSWORD_INVALID')) {
+        state.passwordRequired = true;
+        els.passwordBox.hidden = false;
+        els.password.focus();
+      }
+      showStatus('error', text);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /* ---------------- Eventos ---------------- */
+  els.text.addEventListener('input', updateCounter);
+  els.text.addEventListener('keydown', function (e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); generate(); }
+  });
+  els.generate.addEventListener('click', generate);
+  els.another.addEventListener('click', function () {
+    hideResult(); hideStatus();
+    els.text.focus(); // o texto original é mantido
+  });
+  els.language.addEventListener('change', function () {
+    state.lang = els.language.value;
+    state.voiceName = '';
+    if (state.voicesByLang[state.lang]) {
+      state.voicesReady = true; pickDefaultModel(); renderModels(); renderVoices(); applyModelControls();
+    } else {
+      loadVoices(state.lang, false);
+    }
+  });
+  els.voice.addEventListener('change', function () { state.voiceName = els.voice.value; showVoiceId(); updateGenerateButton(); });
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="gender"]'), function (r) {
+    r.addEventListener('change', function () { state.gender = r.value; renderVoices(); });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="quality"]'), function (c) {
+    c.addEventListener('change', function () {
+      state.qualities = Array.prototype.filter.call(document.querySelectorAll('input[name="quality"]'), function (x) { return x.checked; }).map(function (x) { return x.value; });
+      renderVoices();
+    });
+  });
+  [els.speed, els.pitch, els.volume].forEach(function (r) { r.addEventListener('input', updateOutputs); });
+  els.reset.addEventListener('click', resetControls);
+  els.password.addEventListener('input', function () { storageSet('vozia_pw', els.password.value); });
+
+  /* ---------------- Início ---------------- */
+  els.password.value = storageGet('vozia_pw');
+  updateOutputs();
+  applyModelControls();
+  applyProviderUI();
+  loadVoices('pt-BR', true);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "voz-ia-google",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Gerador de áudio MP3 com Google Cloud Text-to-Speech, hospedado na Vercel",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "google-auth-library": "^9.15.1"
+  }
+}
